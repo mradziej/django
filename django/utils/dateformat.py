@@ -16,7 +16,9 @@ from django.utils.tzinfo import LocalTimezone
 from django.utils.translation import ugettext as _
 from django.utils.encoding import force_unicode
 from calendar import isleap, monthrange
-import re, time
+import re
+from calendar import timegm
+from time import mktime
 
 re_formatchars = re.compile(r'(?<!\\)([aAbBdDfFgGhHiIjlLmMnNOPrsStTUwWyYzZ])')
 re_escaped = re.compile(r'\\(.)')
@@ -199,8 +201,10 @@ class DateFormat(TimeFormat):
 
     def U(self):
         "Seconds since the Unix epoch (January 1 1970 00:00:00 GMT)"
-        off = self.timezone and self.timezone.utcoffset(self.data) or 0
-        return int(time.mktime(self.data.timetuple())) + off.seconds * 60
+        if getattr(self.data, 'tzinfo', None):
+            return int(timegm(self.data.utctimetuple()))
+        else:
+            return int(mktime(self.data.timetuple()))
 
     def w(self):
         "Day of the week, numeric, i.e. '0' (Sunday) to '6' (Saturday)"
